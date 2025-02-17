@@ -6,7 +6,7 @@ function runPreCheck {
   echo -n "...... Docker installed? "
   if [ -z "$(command -v docker)" ]; then
     echo "No! You are trying to install a DOCKER image. 'docker' is not installed."
-    exit -1
+    exit 1
   else
     echo " OK"
   fi
@@ -23,10 +23,13 @@ function runPreCheck {
   fi
 
   # Check if xmlstarlet is installed
-  if ! command -v xmlstarlet &> /dev/null; then
+  if [ -z "$(command -v xmlstarlet)" ]; then
       echo "xmlstarlet not found on system. Using leplusorg/xml:latest to proceed."
+      docker image pull leplusorg/xml:latest
       xmlstarlet () {
-      docker run -i --rm leplusorg/xml:latest xmlstarlet "$@"
+      #var=${@/$temp_file/\/tmp\/data.xml}
+      MSYS_NO_PATHCONV=1 docker run -i -v "/$PWD":/home/default --rm leplusorg/xml:latest xmlstarlet "$@"
+      #echo "<----DOCKER"
       } 
   fi
 
@@ -50,22 +53,29 @@ function docker_start {
       echo "The container $1 does not exist."
       
       # Create and start the container if it does not exist
-      docker run -d --name $@
+      docker run -d --name "$@"
   fi
 }
 
 # Function to transform SubmissionResult to table
 function SubmissionResult_to_table {
 
-  echo -e "\nSubmission Results Table:"
   # Extract submission results into a table format
-  echo $1 | xmlstarlet sel -t \
-    -o "Action|URN|Status" \
-    -m "//reg:SubmissionResult" \
+  # Issue using git bash on windows
+  #temp_file=$(mktemp)
+  temp_file="./data.xml"
+  echo "$@" > "$temp_file"
+ MSYS_NO_PATHCONV=1 xmlstarlet sel \
+    -N reg='http://www.sdmx.org/resources/sdmxml/schemas/v2_1/registry' \
+    -N message='http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message' \
+    -N com='http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common' \
+    -t \
+    -o 'Action|URN|Status' \
+    -m '//reg:SubmissionResult' \
     -n \
-    -v "concat(reg:SubmittedStructure/@action, '|', reg:SubmittedStructure/reg:MaintainableObject/URN, '|', reg:StatusMessage/@status)" \
-    | column -t -s '|'
-
+    -v 'concat(reg:SubmittedStructure/@action, "|", reg:SubmittedStructure/reg:MaintainableObject/URN, "|", reg:StatusMessage/@status)' \
+    "$temp_file" | column -t -s '|'
+    rm "$temp_file"
 }
 
 
@@ -77,7 +87,7 @@ until curl --output /dev/null --silent --head --fail http://localhost:8080/ws/fu
 done
 
 
-# Not working: What is correct syntax for using an URL (possible with the GUI)?
+# Not working: What is the correct syntax for using an URL (possible with the GUI)?
 # curl -X POST http://localhost:8080/ws/secure/sdmxapi/rest \
 #   --header "Content-Type:application/xml" \
 #   --user root:password \
@@ -88,37 +98,41 @@ done
 #   -F "fileName=" \
 #   -F "uploadType=url"
 
-# Working with pipe
+# Working with pipe (but not fully support asynchron process)
 # curl https://data-api.ecb.europa.eu/service/datastructure/all/all/all?references=all | \
 #   curl -X POST \
 #     --user root:password \
 #     --header "Content-Type: application/xml" \
 #     --data-binary @- \
 #      http://localhost:8080/ws/secure/sdmxapi/rest
-SubmissionResult_to_table "$(curl -s https://registry.sdmx.org/sdmx/v2/structure/codelist/SDMX/CL_FREQ/+/?format=sdmx-3.0 | \
+xml_content=$(curl -s https://registry.sdmx.org/sdmx/v2/structure/codelist/SDMX/CL_FREQ/+/?format=sdmx-3.0 | \
   curl -s -X POST \
     --user root:password \
     --header 'Content-Type: application/xml' \
     --header 'Action: Replace' \
     --data-binary @- \
-     http://localhost:8080/ws/secure/sdmxapi/rest)"
+     http://localhost:8080/ws/secure/sdmxapi/rest)
+SubmissionResult_to_table "$xml_content"
+
 
 # Discrepancies in structures stored as examples in docker image -> update with current version...
-SubmissionResult_to_table "$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/ECB_EXR1/1.0?references=all | \
+xml_content=$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/ECB_EXR1/1.0?references=all | \
   curl -s -X POST \
     --user root:password \
     --header 'Content-Type: application/xml' \
     --header 'Action: Replace' \
     --data-binary @- \
-     http://localhost:8080/ws/secure/sdmxapi/rest)"
+     http://localhost:8080/ws/secure/sdmxapi/rest)
+SubmissionResult_to_table "$xml_content"
 
-SubmissionResult_to_table "$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/ECB_TRD1/1.0?references=all | \
+xml_content=$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/ECB_TRD1/1.0?references=all | \
   curl -s -X POST \
     --user root:password \
     --header 'Content-Type: application/xml' \
     --header 'Action: Replace' \
     --data-binary @- \
-     http://localhost:8080/ws/secure/sdmxapi/rest)"
+     http://localhost:8080/ws/secure/sdmxapi/rest)
+SubmissionResult_to_table "$xml_content"
 
 
 additional_content=$(cat <<EOF
@@ -1302,7 +1316,7 @@ additional_content=$(cat <<EOF
 EOF
 )
 
-SubmissionResult_to_table "$(echo ${additional_content} | \
+SubmissionResult_to_table "$(echo "${additional_content}" | \
   curl -s -X POST \
     --user root:password \
     --header 'Content-Type: application/xml' \
@@ -1323,13 +1337,13 @@ token=$(curl -s -X POST \
 if [ -z "$token" ]
 then
     echo "Error with the request"
-    exit -1
+    exit 1
 fi
 while true
 do
   response=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$token")
-  status=$(echo $response | jq -r ".Status")
-  echo $token: $status
+  status=$(echo "$response" | jq -r ".Status")
+  echo "$token: $status"
   if [[ "$status" =~ ^(Complete|IncorrectDSD|InvalidRef|MissingDSD|Error)$ ]]
   then
     break
@@ -1338,17 +1352,16 @@ do
 done
 
 curl -s -X POST -H 'Content-Type: application/json' \
-  -d '{"UID" : "$token", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)", "urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR(1.0)"] }' \
+  -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)", "urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR(1.0)"] }' \
   'http://localhost:8080/ws/public/data/revalidate'
 while true
 do
   response=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$token")
-  status=$(echo $response | jq -r ".Status")
-  echo $token: $status
+  status=$(echo "$response" | jq -r ".Status")
+  echo "$token: $status"
   if [[ "$status" =~ ^(Complete|IncorrectDSD|InvalidRef|MissingDSD|Error)$ ]]
   then
     break
   fi
   sleep 5
 done
-
