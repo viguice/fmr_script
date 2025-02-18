@@ -1,60 +1,90 @@
 #!/bin/bash
 
-function runPreCheck {
-  echo "... Running pre-check"
+# =====================================================================================
+# Script Name: fmr_ecb.sh
+# Description: This script automates the setup and configuration of the FMR
+#              (Fusion Metadata Registry) Docker container for demoing FMR API.
+#              It performspre-checks for required tools, starts the Docker container,
+#              uploads data structures to the FMR, and validates data against
+#              these structures.
+#              The script is meant to be reusable by anyone for testing FMR API.
+#
+# Usage:
+#   - Ensure Docker is installed and running on your system.
+#   - Run the script in a terminal with appropriate permissions.
+#
+# Requirements:
+#   - Docker
+# Other tools should work based on docker images if they are not installed locally:
+#   - jq (JSON processor)
+#   - xmlstarlet (XML processing tool)
+#   - curl (for API interactions)
+#
+# Author: [Your Name]
+# Date: [Current Date]
+# Version: 1.0
+# =====================================================================================
 
-  echo -n "...... Docker installed? "
-  if [ -z "$(command -v docker)" ]; then
-    echo "No! You are trying to install a DOCKER image. 'docker' is not installed."
-    exit 1
-  else
-    echo " OK"
-  fi
 
 
-  echo -n "...... jq installed? "
-  if [ -z "$(command -v jq)" ]; then
-    echo "'yq' not found on system. Using leplusorg/xml:latest image."
-    jq () {
-    docker run -i --rm leplusorg/xml:latest jq "$@"
-    }   
-  else
-    echo " OK"
-  fi
-
-  # Check if xmlstarlet is installed
-  if [ -z "$(command -v xmlstarlet)" ]; then
-      echo "xmlstarlet not found on system. Using leplusorg/xml:latest to proceed."
-      docker image pull leplusorg/xml:latest
-      xmlstarlet () {
-      #var=${@/$temp_file/\/tmp\/data.xml}
-      MSYS_NO_PATHCONV=1 docker run -i -v "/$PWD":/home/default --rm leplusorg/xml:latest xmlstarlet "$@"
-      #echo "<----DOCKER"
-      } 
-  fi
-
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-function docker_start {
-  # Check if the container exists
-  if docker inspect "$1" > /dev/null 2>&1; then
-      echo "The container $1 exists."
-      
-      # Check if the container is running
-      if $(docker inspect -f '{{.State.Status}}' "$1" | grep -q "running"); then
-          echo "The container $1 is running."
-      else
-          echo "The container $1 is not running."
-          
-          # Start the container if it is not running
-          docker start "$1"
-      fi
-  else
-      echo "The container $1 does not exist."
-      
-      # Create and start the container if it does not exist
-      docker run -d --name "$@"
-  fi
+# Function to log messages
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+# Pre-checks
+run_pre_checks() {
+    log_message "Running pre-checks..."
+
+    if ! command_exists docker; then
+        log_message "Error: Docker is not installed."
+        exit 1
+    fi
+
+    if ! command_exists curl; then
+        log_message "curl not found. Using Docker image for curl."
+        curl() {
+            MSYS_NO_PATHCONV=1 docker run -i --rm alpine/curl:latest curl "$@"
+        }
+        docker pull alpine/curl:latest
+    fi
+
+    if ! command_exists jq; then
+        log_message "jq not found. Using Docker image for jq."
+        jq() {
+            MSYS_NO_PATHCONV=1 docker run -i -v "/$PWD":/home/default --rm leplusorg/xml:latest jq "$@"
+        }
+    fi
+
+    if ! command_exists xmlstarlet; then
+        log_message "xmlstarlet not found. Using Docker image for xmlstarlet."
+        xmlstarlet() {
+            MSYS_NO_PATHCONV=1 docker run -i -v "/$PWD":/home/default --rm leplusorg/xml:latest xmlstarlet "$@"
+        }
+        docker pull leplusorg/xml:latest
+    fi
+}
+
+# Function to start Docker container
+start_fmr_container() {
+    local container_name="fmr"
+    if docker inspect "$container_name" > /dev/null 2>&1; then
+        log_message "Container $container_name exists."
+        if ! docker inspect -f '{{.State.Running}}' "$container_name"; then
+            log_message "Starting container $container_name..."
+            docker start "$container_name"
+        else
+            log_message "Container $container_name is already running."
+        fi
+    else
+        log_message "Creating and starting container $container_name..."
+        docker run -d --name "$container_name" -p 8080:8080 -e SERVER_URL=http://localhost:8080 -e CATALINA_OPTS="-Xmx6G" sdmxio/fmr-mysql:11.19.4
+    fi
 }
 
 # Function to transform SubmissionResult to table
@@ -78,9 +108,41 @@ function SubmissionResult_to_table {
     rm "$temp_file"
 }
 
+function fmr_wait {
+  local token=$1
+  if [ -z "$token" ]
+  then
+      echo "Error with the request"
+      exit 1
+  fi
+  while true
+  do
+    response=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$token")
+    status=$(echo "$response" | jq -r ".Status")
+    log_message "$token: $status"
+    if [[ "$status" =~ ^(Complete|IncorrectDSD|InvalidRef|MissingDSD|Error)$ ]]
+    then
+      break
+    fi
+    sleep 5
+  done
+}
 
-runPreCheck
-docker_start fmr -p 8080:8080 -e SERVER_URL=http://localhost:8080 -eCATALINA_OPTS="-Xmx6G" sdmxio/fmr-mysql:11.19.4
+function fmr_loadreport {
+# Extract relevant data and add error count if errors exist
+fmr_status=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$1")
+echo $fmr_status | jq -r '
+  def count_errors: if .Errors then (.Datasets | map(.ValidationReport | map(.Errors | length) | add) | add) else 0 end;
+  def dash_line: "-" * .Datasets[0].DSD | length;
+  ["DSD", "KeysCount", "ObsCount", "GroupsCount", "ErrorCount"],
+  [dash_line, "---------", "--------", "-----------", "------", "----------"],
+  [.Datasets[0].DSD, (.Datasets[0].KeysCount|tostring), (.Datasets[0].ObsCount|tostring),
+  (.Datasets[0].GroupsCount|tostring), (count_errors | tostring)]
+  | @tsv' | column -t
+}
+
+run_pre_checks
+start_fmr_container
 until curl --output /dev/null --silent --head --fail http://localhost:8080/ws/fusion/info/product; do
     printf '.'
     sleep 5
@@ -105,6 +167,8 @@ done
 #     --header "Content-Type: application/xml" \
 #     --data-binary @- \
 #      http://localhost:8080/ws/secure/sdmxapi/rest
+echo ""
+log_message "Import CL_FREQ codelist from global registry"
 xml_content=$(curl -s https://registry.sdmx.org/sdmx/v2/structure/codelist/SDMX/CL_FREQ/+/?format=sdmx-3.0 | \
   curl -s -X POST \
     --user root:password \
@@ -116,6 +180,8 @@ SubmissionResult_to_table "$xml_content"
 
 
 # Discrepancies in structures stored as examples in docker image -> update with current version...
+echo ""
+log_message "Overwrite default ECB_EXR1 structures in FMR from the ones available on ECB website"
 xml_content=$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/ECB_EXR1/1.0?references=all | \
   curl -s -X POST \
     --user root:password \
@@ -125,6 +191,8 @@ xml_content=$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/E
      http://localhost:8080/ws/secure/sdmxapi/rest)
 SubmissionResult_to_table "$xml_content"
 
+echo ""
+log_message "Overwrite default ECB_TRD1 structures in FMR from the ones available on ECB website"
 xml_content=$(curl -s https://data-api.ecb.europa.eu/service/datastructure/ECB/ECB_TRD1/1.0?references=all | \
   curl -s -X POST \
     --user root:password \
@@ -1316,15 +1384,22 @@ additional_content=$(cat <<EOF
 EOF
 )
 
-SubmissionResult_to_table "$(echo "${additional_content}" | \
+echo ""
+log_message "Duplicate ECB structures using SDMX as agency with mapping from ECB to SDMX agency."
+log_message "-> implicit mapping except for FREQ. Other codelists and concept remain on ECB agency."
+log_message "In practice, using SDMX agency for storing artefacts should be avoided and replaced"
+log_message "by your own agency."
+xml_content="$(echo "${additional_content}" | \
   curl -s -X POST \
     --user root:password \
     --header 'Content-Type: application/xml' \
     --header 'Action: Replace' \
     --data-binary @- \
      http://localhost:8080/ws/secure/sdmxapi/rest)"
+SubmissionResult_to_table "$xml_content"
 
-
+echo ""
+log_message "Download and parse EXR data from ecb website"
 token=$(curl -s -X POST \
   -F 'uploadFile=undefined' \
   -F 'dataUploadType=url' \
@@ -1334,34 +1409,53 @@ token=$(curl -s -X POST \
   -F "dsd=prov" \
   -F "csvDelimiter=comma" \
   'http://localhost:8080/ws/public/data/load' | jq -r '.uid')
-if [ -z "$token" ]
-then
-    echo "Error with the request"
-    exit 1
-fi
-while true
-do
-  response=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$token")
-  status=$(echo "$response" | jq -r ".Status")
-  echo "$token: $status"
-  if [[ "$status" =~ ^(Complete|IncorrectDSD|InvalidRef|MissingDSD|Error)$ ]]
-  then
-    break
-  fi
-  sleep 5
-done
+fmr_wait $token
+fmr_loadreport $token
+log_message "Download ECB:EXR in csv format."
+json_content="$(curl -s -G -X GET -H 'Accept: application/vnd.sdmx.data+csv;version=1.0.0' \
+  -d "uid=$token" \
+  'http://localhost:8080/ws/public/data/download' \
+  -o ecb_exr.csv)"
 
-curl -s -X POST -H 'Content-Type: application/json' \
-  -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)", "urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR(1.0)"] }' \
-  'http://localhost:8080/ws/public/data/revalidate'
-while true
-do
-  response=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$token")
-  status=$(echo "$response" | jq -r ".Status")
-  echo "$token: $status"
-  if [[ "$status" =~ ^(Complete|IncorrectDSD|InvalidRef|MissingDSD|Error)$ ]]
-  then
-    break
-  fi
-  sleep 5
-done
+
+log_message "Revalidate EXR data using SDMX agency (expected results: no errors on FREQ)"
+# curl -s -X POST -H 'Content-Type: application/json' \
+#   -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)", "urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR(1.0)"] }' \
+#   'http://localhost:8080/ws/public/data/revalidate'
+json_content="$(curl -s -X POST -H 'Content-Type: application/json' \
+  -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR(1.0)"] }' \
+  'http://localhost:8080/ws/public/data/revalidate')"
+fmr_wait $token
+fmr_loadreport $token
+
+echo ""
+log_message "Download SDMX:EXR in csv format."
+log_message "Expected results: all ECB:EXR(1.0),H, should be renamed into SDMX:EXR(1.0),S,"
+json_content="$(curl -s -G -X GET -H 'Accept: application/vnd.sdmx.data+csv;version=1.0.0' \
+  -d "uid=$token" \
+  'http://localhost:8080/ws/public/data/download' \
+  -o sdmx_exr.csv)"
+
+echo ""
+log_message "Revalidate EXR data using SDMX:EXR_A dataflow."
+log_message "SDMX:EXR_A should apply an additional constraint and returns only annual data."
+json_content="$(curl -s -X POST -H 'Content-Type: application/json' \
+  -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR_A(1.0)"] }' \
+  'http://localhost:8080/ws/public/data/revalidate')"
+fmr_wait $token
+fmr_loadreport $token
+
+echo ""
+log_message "Download SDMX:EXR_A in csv format."
+log_message "Expected results: Only lines starting with SDMX:EXR_A(1.0),A,"
+json_content="$(curl -s -G -X GET -H 'Accept: application/vnd.sdmx.data+csv;version=1.0.0' \
+  -d "uid=$token" \
+  'http://localhost:8080/ws/public/data/download' \
+  -o sdmx_exr_a.csv)"
+
+#  -d "map=urn:sdmx:org.sdmx.infomodel.structuremapping.StructureMap=SDMX:MAP_EXR1(1.0)" \
+log_message "ECB:EXR    $(($(wc -l < "ecb_exr.csv") - 1)) observations"
+log_message "SDMX:EXR   $(($(wc -l < "sdmx_exr.csv") - 1)) observations"
+log_message "SDMX:EXR_A $(($(wc -l < "sdmx_exr_a.csv") - 1)) observations"
+log_message "Done."
+log_message "For clean-up, use: docker stop fmr; docker rm fmr"
