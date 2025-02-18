@@ -133,7 +133,8 @@ function fmr_loadreport {
 fmr_status=$(curl -s -X GET  "http://localhost:8080/ws/public/data/loadStatus?uid=$1")
 echo $fmr_status | jq -r '
   def count_errors: if .Errors then (.Datasets | map(.ValidationReport | map(.Errors | length) | add) | add) else 0 end;
-    def dash_line: .Datasets[0].DSD | length | range(.) | "-" | join("");
+    def dash_line: .Datasets[0].DSD | length | [range(.) | "-"] | join("");
+
   ["DSD", "KeysCount", "ObsCount", "GroupsCount", "ErrorCount"],
   [dash_line, "---------", "--------", "-----------", "------", "----------"],
   [.Datasets[0].DSD, (.Datasets[0].KeysCount|tostring), (.Datasets[0].ObsCount|tostring),
