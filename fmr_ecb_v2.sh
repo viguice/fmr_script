@@ -1,14 +1,13 @@
 #!/bin/bash
 
 # =====================================================================================
-# Script Name: fmr_ecb.sh
-# Description: This script automates the setup and configuration of the FMR
-#              (Fusion Metadata Registry) Docker container for demoing FMR API.
-#              It performspre-checks for required tools, starts the Docker container,
-#              uploads data structures to the FMR, and validates data against
-#              these structures.
-#              The script is meant to be reusable by anyone for testing FMR API.
-#
+# Script Name: fmr_ecb_v2.sh
+# Description: Same as the original but add mapping info during validation phase.
+#              This feature seems not to be currently supported by FMR as mapping
+#              is a valid option only on download endpoint.
+#              Ideally, I consider that FMR should be capable to resolve mappings
+#              as soon as they are declared in the registry without having to
+#              mention them explicitly. 
 # Usage:
 #   - Ensure Docker is installed and running on your system.
 #   - Run the script in a terminal with appropriate permissions.
@@ -20,8 +19,8 @@
 #   - xmlstarlet (XML processing tool)
 #   - curl (for API interactions)
 #
-# Author: [Your Name]
-# Date: [Current Date]
+# Author: Cédric Viguié
+# Date: 19-12-2025
 # Version: 1.0
 # =====================================================================================
 

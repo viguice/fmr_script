@@ -20,8 +20,8 @@
 #   - xmlstarlet (XML processing tool)
 #   - curl (for API interactions)
 #
-# Author: [Your Name]
-# Date: [Current Date]
+# Author: Cédric Viguié
+# Date: 19-12-2025
 # Version: 1.0
 # =====================================================================================
 
