@@ -1,12 +1,12 @@
-2025-02-19 08:58:15 - Running pre-checks...
-2025-02-19 08:58:15 - xmlstarlet not found. Using Docker image for xmlstarlet.
-2025-02-19 08:58:16 - Creating and starting container fmr...
+2025-02-19 08:39:27 - Running pre-checks...
+2025-02-19 08:39:27 - xmlstarlet not found. Using Docker image for xmlstarlet.
+2025-02-19 08:39:28 - Creating and starting container fmr...
 .
-2025-02-19 08:58:34 - Import CL_FREQ codelist from global registry
+2025-02-19 08:39:48 - Import CL_FREQ codelist from global registry
 Action  URN                                                              Status
 Append  urn:sdmx:org.sdmx.infomodel.codelist.Codelist=SDMX:CL_FREQ(2.1)  Success
 
-2025-02-19 08:58:35 - Overwrite default ECB_EXR1 structures in FMR from the ones available on ECB website
+2025-02-19 08:39:49 - Overwrite default ECB_EXR1 structures in FMR from the ones available on ECB website
 Action  URN                                                                                Status
 Append  urn:sdmx:org.sdmx.infomodel.base.AgencyScheme=ECB:AGENCIES(1.0)                    Success
 Append  urn:sdmx:org.sdmx.infomodel.base.AgencyScheme=SDMX:AGENCIES(1.0)                   Success
@@ -26,7 +26,7 @@ Append  urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=ECB.DISS:JDF_EXR_HCI_
 Append  urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=ECB.DISS:MOBILE_EXR(1.0)        Success
 Append  urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=ECB.DISS:MOBILE_KEY_6(1.0)      Success
 
-2025-02-19 08:58:36 - Overwrite default ECB_TRD1 structures in FMR from the ones available on ECB website
+2025-02-19 08:39:50 - Overwrite default ECB_TRD1 structures in FMR from the ones available on ECB website
 Action  URN                                                                        Status
 Append  urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_ADJUSTMENT(1.0)       Success
 Append  urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_AREA_EE(1.0)          Success
@@ -36,10 +36,10 @@ Append  urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=ECB:ECB_TRD1(1.0
 Append  urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=ECB:TRD(1.0)            Success
 Append  urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=ECB.DISS:TRD_PUB(1.0)   Success
 
-2025-02-19 08:58:37 - Duplicate ECB structures using SDMX as agency with mapping from ECB to SDMX agency.
-2025-02-19 08:58:37 - -> implicit mapping except for FREQ. Other codelists and concept remain on ECB agency.
-2025-02-19 08:58:37 - In practice, using SDMX agency for storing artefacts should be avoided and replaced
-2025-02-19 08:58:37 - by your own agency.
+2025-02-19 08:39:51 - Duplicate ECB structures using SDMX as agency with mapping from ECB to SDMX agency.
+2025-02-19 08:39:51 - -> implicit mapping except for FREQ. Other codelists and concept remain on ECB agency.
+2025-02-19 08:39:51 - In practice, using SDMX agency for storing artefacts should be avoided and replaced
+2025-02-19 08:39:51 - by your own agency.
 Action  URN                                                                                   Status
 Append  urn:sdmx:org.sdmx.infomodel.registry.DataConstraint=SDMX:CR_EXR_A(1.0)                Success
 Append  urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)            Success
@@ -51,57 +51,57 @@ Append  urn:sdmx:org.sdmx.infomodel.structuremapping.RepresentationMap=SDMX:REPM
 Append  urn:sdmx:org.sdmx.infomodel.structuremapping.StructureMap=SDMX:MAP_EXR1(1.0)          Success
 Append  urn:sdmx:org.sdmx.infomodel.structuremapping.StructureMap=SDMX:MAP_TDR1(1.0)          Success
 
-2025-02-19 08:58:38 - Download and parse EXR data from ecb website
-2025-02-19 08:59:08 - e179cf07-847a-455f-8238-a9821240b2f3: Analysing
-2025-02-19 08:59:13 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:18 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:23 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:28 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:33 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:38 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:43 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:48 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:53 - e179cf07-847a-455f-8238-a9821240b2f3: Consolidating
-2025-02-19 08:59:58 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:00:03 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:00:08 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:00:13 - e179cf07-847a-455f-8238-a9821240b2f3: Complete
+2025-02-19 08:39:52 - Download and parse EXR data from ecb website
+2025-02-19 08:40:25 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Analysing
+2025-02-19 08:40:30 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:40:35 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:40:40 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:40:45 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:40:50 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:40:55 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:41:00 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:41:05 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:41:10 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:41:16 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Consolidating
+2025-02-19 08:41:21 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:41:26 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:41:31 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:41:36 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Complete
 DSD                KeysCount  ObsCount  GroupsCount  ErrorCount
 -----------------  ---------  --------  -----------  ----------
 ECB:ECB_EXR1(1.0)  3927       3355466   0            52
-2025-02-19 09:00:13 - Download ECB:EXR in csv 1.0 format.
-2025-02-19 09:00:13 - Error: First column with ECB:ECB_EXR1(1.0) -> DSD id
-2025-02-19 09:00:13 -        Must be ECB:EXR(1.0) -> Dataflow id
-2025-02-19 09:00:13 - FMR must not allow CSV 1.0 format if Dataflow id is missing after a load action.
-2025-02-19 09:00:39 - Revalidate EXR data using SDMX agency (expected results: no errors on FREQ)
-2025-02-19 09:00:39 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:00:44 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:00:49 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:00:54 - e179cf07-847a-455f-8238-a9821240b2f3: Complete
+2025-02-19 08:41:36 - Download ECB:EXR in csv 1.0 format.
+2025-02-19 08:41:36 - Error: First column with ECB:ECB_EXR1(1.0) -> DSD id
+2025-02-19 08:41:36 -        Must be ECB:EXR(1.0) -> Dataflow id
+2025-02-19 08:42:00 - Revalidate EXR data using SDMX agency (expected results: no errors on FREQ)
+2025-02-19 08:42:00 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:42:05 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:42:11 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:42:16 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Complete
 DSD                 KeysCount  ObsCount  GroupsCount  ErrorCount
 ------------------  ---------  --------  -----------  ----------
 SDMX:ECB_EXR1(1.0)  3927       3355466   0            52
-2025-02-19 09:00:54 - Warning: Revalidate unable to used the defined mapping.
-2025-02-19 09:00:54 -          Would be good to get validation based on mapped information.
+2025-02-19 08:42:16 - Warning: Added a map during revalidation (and not in download).
 
-2025-02-19 09:00:54 - Download SDMX:EXR in csv format.
-2025-02-19 09:00:54 - Expected results: all ECB:EXR(1.0),H, should be renamed into SDMX:EXR(1.0),S,
-2025-02-19 09:00:54 - Error: Get first column with SDMX:ECB_EXR1(1.0) -> DSD id
-2025-02-19 09:00:54 -        Must be SDMX:EXR(1.0) -> Dataflow id
+2025-02-19 08:42:16 - Download SDMX:EXR in csv format.
+2025-02-19 08:42:16 - Expected results: all ECB:EXR(1.0),H, should be renamed into SDMX:EXR(1.0),S,
+2025-02-19 08:42:42 - Error: Get first column with SDMX:ECB_EXR1(1.0) -> DSD id
+2025-02-19 08:42:42 -        Must be SDMX:EXR(1.0) -> Dataflow id
 
-2025-02-19 09:00:54 - Revalidate EXR data using SDMX:EXR_A dataflow.
-2025-02-19 09:00:54 - SDMX:EXR_A should apply an additional constraint and returns only annual data.
-2025-02-19 09:00:55 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:01:00 - e179cf07-847a-455f-8238-a9821240b2f3: Validating
-2025-02-19 09:01:05 - e179cf07-847a-455f-8238-a9821240b2f3: Complete
+2025-02-19 08:42:42 - Revalidate EXR data using SDMX:EXR_A dataflow.
+2025-02-19 08:42:42 - SDMX:EXR_A should apply an additional constraint and returns only annual data.
+2025-02-19 08:42:42 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:42:47 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:42:52 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Validating
+2025-02-19 08:42:57 - 78233b1e-200a-4d99-ad40-1cc6c95e079e: Complete
 Dataflow         KeysCount  ObsCount  GroupsCount  ErrorCount
 ---------------  ---------  --------  -----------  ----------
 SDMX:EXR_A(1.0)  3927       3355466   0            56
 
-2025-02-19 09:01:05 - Download SDMX:EXR_A in csv format.
-2025-02-19 09:01:05 - Expected results: Only lines starting with SDMX:EXR_A(1.0),A,
-2025-02-19 09:01:05 - ECB:EXR    3355466 observations
-2025-02-19 09:01:05 - SDMX:EXR   0 observations
-2025-02-19 09:01:05 - SDMX:EXR_A 0 observations
-2025-02-19 09:01:05 - Done.
-2025-02-19 09:01:05 - For clean-up, use: docker stop fmr; docker rm fmr
+2025-02-19 08:42:57 - Download SDMX:EXR_A in csv format.
+2025-02-19 08:42:57 - Expected results: Only lines starting with SDMX:EXR_A(1.0),A,
+2025-02-19 08:43:29 - ECB:EXR    3355466 observations
+2025-02-19 08:43:29 - SDMX:EXR   3355466 observations
+2025-02-19 08:43:30 - SDMX:EXR_A 3355466 observations
+2025-02-19 08:43:30 - Done.
+2025-02-19 08:43:30 - For clean-up, use: docker stop fmr; docker rm fmr

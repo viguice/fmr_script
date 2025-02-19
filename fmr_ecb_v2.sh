@@ -1417,11 +1417,10 @@ fmr_loadreport $token
 log_message "Download ECB:EXR in csv 1.0 format."
 log_message "Error: First column with ECB:ECB_EXR1(1.0) -> DSD id"
 log_message "       Must be ECB:EXR(1.0) -> Dataflow id"
-log_message "FMR must not allow CSV 1.0 format if Dataflow id is missing after a load action."
 json_content="$(curl -s -G -X GET -H 'Accept: application/vnd.sdmx.data+csv;version=1.0.0' \
   -d "uid=$token" \
   'http://localhost:8080/ws/public/data/download' \
-  -o ecb_exr.csv)"
+  -o ecb_exr_v2.csv)"
 
 log_message "Revalidate EXR data using SDMX agency (expected results: no errors on FREQ)"
 # curl -s -X POST -H 'Content-Type: application/json' \
@@ -1429,21 +1428,19 @@ log_message "Revalidate EXR data using SDMX agency (expected results: no errors 
 #   'http://localhost:8080/ws/public/data/revalidate'
 json_content="$(curl -s -X POST -H 'Content-Type: application/json' \
   -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR(1.0)"] }' \
+  -d "map=urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)" \
   'http://localhost:8080/ws/public/data/revalidate')"
 fmr_wait $token
 fmr_loadreport $token
-log_message "Warning: Revalidate unable to used the defined mapping."
-log_message "         Would be good to get validation based on mapped information."
-
+log_message "Warning: Added a map during revalidation (and not in download)."
 
 echo ""
 log_message "Download SDMX:EXR in csv format."
 log_message "Expected results: all ECB:EXR(1.0),H, should be renamed into SDMX:EXR(1.0),S,"
 json_content="$(curl -s -G -X GET -H 'Accept: application/vnd.sdmx.data+csv;version=1.0.0' \
   -d "uid=$token" \
-  -d "map=urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)" \
   'http://localhost:8080/ws/public/data/download' \
-  -o sdmx_exr.csv)"
+  -o sdmx_exr_v2.csv)"
 log_message "Error: Get first column with SDMX:ECB_EXR1(1.0) -> DSD id"
 log_message "       Must be SDMX:EXR(1.0) -> Dataflow id"
 
@@ -1453,6 +1450,7 @@ log_message "Revalidate EXR data using SDMX:EXR_A dataflow."
 log_message "SDMX:EXR_A should apply an additional constraint and returns only annual data."
 json_content="$(curl -s -X POST -H 'Content-Type: application/json' \
   -d '{"UID" : "'"$token"'", "SRef" : ["urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=SDMX:EXR_A(1.0)"] }' \
+  -d "map=urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)" \
   'http://localhost:8080/ws/public/data/revalidate')"
 fmr_wait $token
 fmr_loadreport $token
@@ -1462,13 +1460,12 @@ log_message "Download SDMX:EXR_A in csv format."
 log_message "Expected results: Only lines starting with SDMX:EXR_A(1.0),A,"
 json_content="$(curl -s -G -X GET -H 'Accept: application/vnd.sdmx.data+csv;version=1.0.0' \
   -d "uid=$token" \
-  -d "map=urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=SDMX:ECB_EXR1(1.0)" \
   'http://localhost:8080/ws/public/data/download' \
-  -o sdmx_exr_a.csv)"
+  -o sdmx_exr_a_v2.csv)"
 
 #  -d "map=urn:sdmx:org.sdmx.infomodel.structuremapping.StructureMap=SDMX:MAP_EXR1(1.0)" \
-log_message "ECB:EXR    $(($(wc -l < "ecb_exr.csv") - 1)) observations"
-log_message "SDMX:EXR   $(($(wc -l < "sdmx_exr.csv") - 1)) observations"
-log_message "SDMX:EXR_A $(($(wc -l < "sdmx_exr_a.csv") - 1)) observations"
+log_message "ECB:EXR    $(($(wc -l < "ecb_exr_v2.csv") - 1)) observations"
+log_message "SDMX:EXR   $(($(wc -l < "sdmx_exr_v2.csv") - 1)) observations"
+log_message "SDMX:EXR_A $(($(wc -l < "sdmx_exr_a_v2.csv") - 1)) observations"
 log_message "Done."
 log_message "For clean-up, use: docker stop fmr; docker rm fmr"
